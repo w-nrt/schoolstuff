@@ -185,9 +185,13 @@ int main(void)
 
     for (int i = 0; i < 10; i++)
     {
-        if (rules[i].delete[0][0] != '\0') // si le delete n'est pas vide
+        for (int j = 0; j < 10; j++)
         {
-            searchRemoveString(Inventory, rules[i].delete[0], 10); // on enlève le delete de l'inventaire
+            if (rules[i].delete[j][0] != '\0') // si le delete n'est pas vide
+            {
+                printf("On supprime [%s] de l'inventaire...\n", rules[i].delete[j]);
+                searchRemoveString(Inventory, rules[i].delete[j], 10); // supprimer le delete de l'inventaire
+            }
         }
         for (int j = 0; j < 10; j++)
         {
@@ -197,6 +201,7 @@ int main(void)
                 {
                     if (rules[i].adds[k][0] != '\0') // si l'add n'est pas vide
                     {
+                        printf("On ajoute [%s] a l'inventaire...\n", rules[i].adds[k]);
                         strcpy(Inventory[j + k], rules[i].adds[k]); // ajouter les add à l'inventaire
                     }
                 }
