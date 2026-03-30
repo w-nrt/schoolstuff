@@ -19,27 +19,24 @@ typedef struct etape
     int nbDelete;
 
 } Etape;
+// la structure au dessus sert à stocker chaque étape du indiquée dans le .txt, elle contient les actions, les préconditions, les adds et les deletes de chaque étape
 
-string Start[10], Finish[10], has[60] = {""};
-int currentHas;
+string Start[10], Finish[10], Inventory[10];
 char ole[100];
 Etape rules[10];
-
-bool matchTableau(string toMatch)
-{
-    // bool toReturn;
-
-    for (int i = 0; i < currentHas; i++){
-        printf("%s regarde %s", toMatch, has[i]);
-    
-        if (strcmp(toMatch, has[i]) != 0)
+int searchRemoveString(string source[], string target, int n){
+        for (int i = 0; i < n; i++)
         {
-            return false;
+            if (strcmp(source[i], target) == 0)
+            {
+                // supprimer la chaine en la remplaçant par une chaine vide
+                source[i][0] = '\0';
+                return 0;
+            }
         }
+        printf("pas trouvé %s! Erreur!\n", target);
+        return -1;
     }
-    return true;
-}
-
 void afficherRules(int nbRules) // donner le nombre max de rules
 {
     printf("=== AFFICHAGE DES REGLES (RULES) ===\n");
@@ -171,29 +168,38 @@ int main(void)
         {
             notEmpty = false;
         }
-        // printf("Etape: %d ;La premiere et deuxieme lettre de la ligne %d sont %c%c\n", nEtapes, nLigne, c[0], c[1]);
     }
 
-    // afficherRules(6);
-    currentHas = sizeof(Start);
-    printf("%d\n", currentHas);
-    for (int i = 0; i < currentHas-1; i++)
-    {
-        //printf("on veut assigner %s à %s\n", Start[i], has[i]);
-       // strcpy(has[i], Start[i]);
-    }
 
-    printf("%d", nEtapes);
-    for (int i = 0; i < nEtapes - 1; i++)
+    // On fait l'inventaire!
+
+    for (int i = 0; i < 10; i++)
     {
-        printf("i:%d\n", i);
-        for (int n = 0; n < rules[i].nbPreconds; n++)
+        if (Start[i][0] != '\0') // qui n'est pas vide
         {
-            printf("n:%d\n", n);
-            if (matchTableau(rules[i].preconds[n]))
+            strcpy(Inventory[i], Start[i]); // est copié dans l'inventaire
+        }
+    }
+
+    // maintenant on regarde chaque delete et on l'enlève de l'inventaire, et chaque add et on l'ajoute à l'inventaire, pour chaque règle
+
+    for (int i = 0; i < 10; i++)
+    {
+        if (rules[i].delete[0][0] != '\0') // si le delete n'est pas vide
+        {
+            searchRemoveString(Inventory, rules[i].delete[0], 10); // on enlève le delete de l'inventaire
+        }
+        for (int j = 0; j < 10; j++)
+        {
+            if (Inventory[j][0] == '\0') // trouver une place vide dans l'inventaire
             {
-                printf("Incoherence!");
-                return 0;
+                for (int k = 0; k < rules[i].nbAdd; k++) //loop les adds de rules[i]
+                {
+                    if (rules[i].adds[k][0] != '\0') // si l'add n'est pas vide
+                    {
+                        strcpy(Inventory[j + k], rules[i].adds[k]); // ajouter les add à l'inventaire
+                    }
+                }
             }
         }
     }
