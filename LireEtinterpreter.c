@@ -21,9 +21,50 @@ typedef struct etape
 } Etape;
 // la structure au dessus sert à stocker chaque étape du indiquée dans le .txt, elle contient les actions, les préconditions, les adds et les deletes de chaque étape
 
+
+
+int m; // utilisé plus tard pour trouver un endroit ou ranger dans le tableau
 string Start[10], Finish[10], Inventory[10];
 char ole[100];
 Etape rules[10];
+bool peutExecuter;
+char c[100]; // stocker le contenu de la ligne, 100 est le maxium de caracteres
+int nLigne = 0, nEtapes = -1;
+bool Succes;
+bool notEmpty = true;
+
+void printinventaire(void){
+printf("Dans l'inventaire on a: ");
+for (int i = 0; i<10; i++){
+printf("[%s], ", Inventory[i]);
+}
+printf("\n\n");
+}
+
+bool TrouveString(string t[], int n, string targ){
+for (int i = 0; i<n; i++){
+
+	if (t[i][0] != '\0'){
+
+		if (strcmp(t[i], targ) == 0){
+			printf("%s est dans l'inventaire\n", targ);
+			return true;
+			
+		}
+	}
+
+}
+printf("%s pas dans l'inventaire\n", targ);
+return false; // on a jamais trouvé le string et on sort de la boucle
+}
+
+void ViderEtape (int x){
+		rules[x].nbActions = -1;
+		rules[x].nbPreconds = -1;
+		rules[x].nbAdd = -1;
+		rules[x].nbDelete = -1;
+}
+	
 int searchRemoveString(string source[], string target, int n){
         for (int i = 0; i < n; i++)
         {
@@ -34,7 +75,7 @@ int searchRemoveString(string source[], string target, int n){
                 return 0;
             }
         }
-        printf("pas trouvé %s! Erreur!\n", target);
+        printf("! ! ! Pas trouvé %s! Erreur! ! ! !\n", target);
         return -1;
     }
 void afficherRules(int nbRules) // donner le nombre max de rules
@@ -103,12 +144,41 @@ int parseLine(char source[], string cible[])
     return n;
 }
 
+bool Execution(int i){
+
+	if (rules[i].nbAdd == -1) return true; // si l'etape a deja été executée
+    printf("\n----LOOP NUMERO %d ----\n\n", i);
+    	peutExecuter = true;
+    	for (int p=0; p < rules[i].nbPreconds; p++){
+    		if (!TrouveString(Inventory, 10, rules[i].preconds[p])) peutExecuter = false;  // si au moins 1 precond est invalide alors on ne peut pas continuer 
+    	}
+    	if (peutExecuter){
+        for (int j = 0; j < rules[i].nbDelete; j++) // j = delete 
+        {
+                printf("On supprime [%s] de l'inventaire...\n", rules[i].delete[j]);
+                searchRemoveString(Inventory, rules[i].delete[j], 10); // supprimer le delete de l'inventaire
+        }
+        	for (int k=0; k<rules[i].nbAdd; k++){ // tout les adds de x a nbadd
+			printf("On veut ajouter [%s] a l'inventaire\n", rules[i].adds[k]);
+			m=0;
+			while (m!=11 && Inventory[m][0] != '\0') m++; //on navigue jusqua un endroit vide dans le tableau
+			if (m==11) printf("Attention! Erreur! Tableau deborde \n");
+			strcpy(Inventory[m], rules[i].adds[k]);
+        	}
+        	ViderEtape(i);
+        	printinventaire();
+        	}else{
+        	printf("! ! ! On ne peut pas executer l'action pour la rule suivante: %d \n Les preconditions ne sont pas remplies. ! ! !\n", i);
+        	return false;
+        	}
+	return true;
+
+
+}
+
 int main(void)
 {
-    FILE *Fichier = fopen("Hello.txt", "r");
-    char c[100]; // stocker le contenu de la ligne, 100 est le maxium de caracteres
-    int nLigne = 0, nEtapes = -1;
-    bool notEmpty = true;
+FILE *Fichier = fopen("Hello.txt", "r");
     fgets(c, 100, Fichier); // début
     while (notEmpty)
     {
@@ -171,43 +241,31 @@ int main(void)
     }
 
 
-    // On fait l'inventaire!
+    // on fait l'inventaire
 
     for (int i = 0; i < 10; i++)
     {
         if (Start[i][0] != '\0') // qui n'est pas vide
         {
             strcpy(Inventory[i], Start[i]); // est copié dans l'inventaire
+            printf("J'ajoute: [%s] a l'inv\n", Start[i]);
         }
+        printf("\n");
     }
 
+afficherRules(6);
+printinventaire();
     // maintenant on regarde chaque delete et on l'enlève de l'inventaire, et chaque add et on l'ajoute à l'inventaire, pour chaque règle
 
-    for (int i = 0; i < 10; i++)
-    {
-        for (int j = 0; j < 10; j++)
-        {
-            if (rules[i].delete[j][0] != '\0') // si le delete n'est pas vide
-            {
-                printf("On supprime [%s] de l'inventaire...\n", rules[i].delete[j]);
-                searchRemoveString(Inventory, rules[i].delete[j], 10); // supprimer le delete de l'inventaire
-            }
-        }
-        for (int j = 0; j < 10; j++)
-        {
-            if (Inventory[j][0] == '\0') // trouver une place vide dans l'inventaire
-            {
-                for (int k = 0; k < rules[i].nbAdd; k++) //loop les adds de rules[i]
-                {
-                    if (rules[i].adds[k][0] != '\0') // si l'add n'est pas vide
-                    {
-                        printf("On ajoute [%s] a l'inventaire...\n", rules[i].adds[k]);
-                        strcpy(Inventory[j + k], rules[i].adds[k]); // ajouter les add à l'inventaire
-                    }
-                }
-            }
-        }
+    while (!Succes){
+   	 Succes = true;
+   	 
+    	for (int i = 0; i < nEtapes; i++){ // i = nombre etape
+    	if (!(Execution(i))) Succes = false;
+   	 }
+   	 printinventaire();
     }
+
 
     fclose(Fichier);
 }
