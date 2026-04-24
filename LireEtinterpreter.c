@@ -2,270 +2,202 @@
 #include <stdbool.h>
 #include <string.h>
 
+// constantes pr les tableaux
+       
+#define MAX_CONDITIONS 10    
+#define MAX_INVENTORY 25    
+#define MAX_RULES 25        
+
+//typedefs
 typedef char string[1024];
 
-typedef struct etape
-{
-    string actions[10];
+typedef struct etape {
+    string actions[MAX_CONDITIONS];
     int nbActions;
-
-    string preconds[10];
+    string preconds[MAX_CONDITIONS];
     int nbPreconds;
-
-    string adds[10];
+    string adds[MAX_CONDITIONS];
     int nbAdd;
-
-    string delete[10];
+    string delete[MAX_CONDITIONS];
     int nbDelete;
-
+    bool complete;
 } Etape;
-// la structure au dessus sert à stocker chaque étape du indiquée dans le .txt, elle contient les actions, les préconditions, les adds et les deletes de chaque étape
 
-
-
-int m; // utilisé plus tard pour trouver un endroit ou ranger dans le tableau
-string Start[10], Finish[10], Inventory[10];
-char ole[100];
-Etape rules[10];
+// variables globales
+int m;
+string Start[MAX_CONDITIONS], Finish[MAX_CONDITIONS], Inventory[MAX_INVENTORY];
+Etape rules[MAX_RULES]; 
 bool peutExecuter;
-char c[100]; // stocker le contenu de la ligne, 100 est le maxium de caracteres
-int nLigne = 0, nEtapes = -1;
-bool Succes;
-bool notEmpty = true;
+char c[100]; 
+int nEtapes = -1;
 
-void printinventaire(void){
-printf("Dans l'inventaire on a: ");
-for (int i = 0; i<10; i++){
-printf("[%s], ", Inventory[i]);
-}
-printf("\n\n");
-}
-
-bool TrouveString(string t[], int n, string targ){
-for (int i = 0; i<n; i++){
-
-	if (t[i][0] != '\0'){
-
-		if (strcmp(t[i], targ) == 0){
-			printf("%s est dans l'inventaire\n", targ);
-			return true;
-			
-		}
-	}
-
-}
-printf("%s pas dans l'inventaire\n", targ);
-return false; // on a jamais trouvé le string et on sort de la boucle
-}
-
-void ViderEtape (int x){
-		rules[x].nbActions = -1;
-		rules[x].nbPreconds = -1;
-		rules[x].nbAdd = -1;
-		rules[x].nbDelete = -1;
-}
-	
-int searchRemoveString(string source[], string target, int n){
-        for (int i = 0; i < n; i++)
-        {
-            if (strcmp(source[i], target) == 0)
-            {
-                // supprimer la chaine en la remplaçant par une chaine vide
-                source[i][0] = '\0';
-                return 0;
-            }
+void printinventaire(void) {
+    printf("Dans l'inventaire on a: ");
+    for (int i = 0; i < MAX_INVENTORY; i++) {
+        if (Inventory[i][0] != '\0') { // si la case n'est pas vide
+            printf("[%s] ", Inventory[i]);
         }
-        printf("! ! ! Pas trouvé %s! Erreur! ! ! !\n", target);
-        return -1;
     }
-void afficherRules(int nbRules) // donner le nombre max de rules
-{
-    printf("=== AFFICHAGE DES REGLES (RULES) ===\n");
-    for (int i = 0; i < nbRules; i++)
-    {
-        printf("\n--- REGLE %d ---\n", i + 1);
+    printf("\n");
+}
 
-        printf("  Actions (%d) : ", rules[i].nbActions);
-        for (int j = 0; j < rules[i].nbActions; j++)
-        {
-            printf("[%s] ", rules[i].actions[j]);
+bool TrouveString(string t[], int n, string targ) {
+    for (int i = 0; i < n; i++) {
+        if (t[i][0] != '\0' && strcmp(t[i], targ) == 0) {
+            return true;
         }
+    }
+    return false;
+}
 
-        printf("\n  Preconditions (%d) : ", rules[i].nbPreconds);
-        for (int j = 0; j < rules[i].nbPreconds; j++)
-        {
-            printf("[%s] ", rules[i].preconds[j]);
+int searchRemoveString(string source[], string target, int n) {
+    for (int i = 0; i < n; i++) {
+        if (strcmp(source[i], target) == 0) {
+            source[i][0] = '\0'; // Supprimer en rendant la chaine vide
+            return 0;
         }
+    }
+    printf("! ! ! Pas trouvé [%s]! Erreur ! ! !\n", target);
+    return -1;
+}
 
-        printf("\n  Adds (%d) : ", rules[i].nbAdd);
-        for (int j = 0; j < rules[i].nbAdd; j++)
-        {
-            printf("[%s] ", rules[i].adds[j]);
-        }
-
-        printf("\n  Deletes (%d) : ", rules[i].nbDelete);
-        for (int j = 0; j < rules[i].nbDelete; j++)
-        {
-            printf("[%s] ", rules[i].delete[j]);
-        }
+void afficherRules(int nbRules) {
+    printf("\n=== AFFICHAGE DES REGLES ===\n");
+    for (int i = 0; i < nbRules; i++) {
+        printf("--- REGLE %d ---\n", i + 1);
+        printf("  Actions: ");
+        for (int j = 0; j < rules[i].nbActions; j++) printf("[%s] ", rules[i].actions[j]);
+        printf("\n  Preconds: ");
+        for (int j = 0; j < rules[i].nbPreconds; j++) printf("[%s] ", rules[i].preconds[j]);
+        printf("\n  Adds: ");
+        for (int j = 0; j < rules[i].nbAdd; j++) printf("[%s] ", rules[i].adds[j]);
+        printf("\n  Deletes: ");
+        for (int j = 0; j < rules[i].nbDelete; j++) printf("[%s] ", rules[i].delete[j]);
         printf("\n");
     }
 }
-int parseLine(char source[], string cible[])
-{
-    int i = 0, n = 0; // i: l'indice de source[], n: l'indice de cible[]
 
-    while (source[i] != ':')
-        i++;   // avancer jusqu'à ':'
-    i++;       // avancer au debut du premier mot
-    int j = i; // marquer le debut du premier mot avec j
-    while (source[i] != '\n')
-    {
+int parseLine(char source[], string cible[]) {
+    int i = 0, n = 0;
 
-        if (source[i] == ',')
-        {
-            // extraire les i-j caracteres a partir de j
-            int x = i;
-            string temp;
+    while (source[i] != '\0' && source[i] != ':') i++;
+    if (source[i] == ':') i++; // Avancer après ':'
 
-            while (source[x] != ',' && source[x] != ':')
-            {
-                temp[x] = source[x];
-                x = x - 1;
-            }
-            // printf("%s", temp);
-
-            memcpy(&cible[n], &source[j], i - j);
+    int j = i;
+    while (source[i] != '\n' && source[i] != '\0') {
+        if (source[i] == ',') {
+            memcpy(cible[n], &source[j], i - j);
+            cible[n][i - j] = '\0'; 
             n++;
-            j = i + 1; // marquer le debut de la chaine suivante avec j
+            j = i + 1;
         }
         i++;
     }
     return n;
 }
 
-bool Execution(int i){
+bool Execution(int i) {
+    if (rules[i].complete) return true; // Déjà exécutée
 
-	if (rules[i].nbAdd == -1) return true; // si l'etape a deja été executée
-    printf("\n----LOOP NUMERO %d ----\n\n", i);
-    	peutExecuter = true;
-    	for (int p=0; p < rules[i].nbPreconds; p++){
-    		if (!TrouveString(Inventory, 10, rules[i].preconds[p])) peutExecuter = false;  // si au moins 1 precond est invalide alors on ne peut pas continuer 
-    	}
-    	if (peutExecuter){
-        for (int j = 0; j < rules[i].nbDelete; j++) // j = delete 
-        {
-                printf("On supprime [%s] de l'inventaire...\n", rules[i].delete[j]);
-                searchRemoveString(Inventory, rules[i].delete[j], 10); // supprimer le delete de l'inventaire
+    peutExecuter = true;
+    for (int p = 0; p < rules[i].nbPreconds; p++) {
+        if (!TrouveString(Inventory, MAX_INVENTORY, rules[i].preconds[p])) {
+            peutExecuter = false;
         }
-        	for (int k=0; k<rules[i].nbAdd; k++){ // tout les adds de x a nbadd
-			printf("On veut ajouter [%s] a l'inventaire\n", rules[i].adds[k]);
-			m=0;
-			while (m!=11 && Inventory[m][0] != '\0') m++; //on navigue jusqua un endroit vide dans le tableau
-			if (m==11) printf("Attention! Erreur! Tableau deborde \n");
-			strcpy(Inventory[m], rules[i].adds[k]);
-        	}
-        	ViderEtape(i);
-        	printinventaire();
-        	}else{
-        	printf("! ! ! On ne peut pas executer l'action pour la rule suivante: %d \n Les preconditions ne sont pas remplies. ! ! !\n", i);
-        	return false;
-        	}
-	return true;
+    }
 
-
+    if (peutExecuter) {
+        printf("\n---- EXECUTION RULE %d ----\n", i);
+        
+        for (int j = 0; j < rules[i].nbDelete; j++) {
+            searchRemoveString(Inventory, rules[i].delete[j], MAX_INVENTORY);
+        }
+        
+        for (int k = 0; k < rules[i].nbAdd; k++) {
+            m = 0;
+            while (m < MAX_INVENTORY && Inventory[m][0] != '\0') m++; // Trouver une case vide
+            if (m < MAX_INVENTORY) {
+                strcpy(Inventory[m], rules[i].adds[k]);
+            } else {
+                printf("Attention! Erreur! Tableau deborde \n");
+            }
+        }
+        
+        rules[i].complete = true; 
+        printinventaire();
+        return true;
+    }
+    return false; // Impossible d'exécuter pour l'instant
 }
 
-int main(void)
-{
-FILE *Fichier = fopen("Hello.txt", "r");
-    fgets(c, 100, Fichier); // début
-    while (notEmpty)
-    {
+int main(void) {
+    FILE *Fichier = fopen("Hello.txt", "r");
+    if (!Fichier) {
+        printf("Erreur : Impossible d'ouvrir le fichier.\n");
+        return 1;
+    }
 
-        if (nEtapes == -1)
-        {
-            if (nLigne == 0)
-            {
-                parseLine(c, Start);
-            }
-            else if (nLigne == 1)
-            {
-                parseLine(c, Finish);
-            }
-            else
-            {
-                nEtapes = 0;
-                nLigne = 0;
-            }
+    int nLigne = 0;
+    
+
+    while (fgets(c, 100, Fichier) != NULL) {
+        if (c[0] == '*') continue; // Ignorer les astérisques
+
+        if (nEtapes == -1) {
+            if (nLigne == 0) parseLine(c, Start);
+            else if (nLigne == 1) parseLine(c, Finish);
+            else { nEtapes = 0; nLigne = 0; continue; }
         }
-        if (nEtapes != -1)
-        {
-            if (nLigne == 0)
-            {
-
+        
+        if (nEtapes != -1) {
+            if (strncmp(c, "action:", 7) == 0) {
                 rules[nEtapes].nbActions = parseLine(c, rules[nEtapes].actions);
-                // printf("Pour ca on a: %s\n", rules[nEtapes].actions[0]);
-            }
-
-            if (nLigne == 1)
-            {
+            } else if (strncmp(c, "preconds:", 9) == 0) {
                 rules[nEtapes].nbPreconds = parseLine(c, rules[nEtapes].preconds);
-            }
-
-            if (nLigne == 2)
-            {
+            } else if (strncmp(c, "add:", 4) == 0) {
                 rules[nEtapes].nbAdd = parseLine(c, rules[nEtapes].adds);
-            }
-
-            if (nLigne == 3)
-            {
+            } else if (strncmp(c, "delete:", 7) == 0) {
                 rules[nEtapes].nbDelete = parseLine(c, rules[nEtapes].delete);
-                nLigne = -1;
-                nEtapes++;
+                rules[nEtapes].complete = false;
+                nEtapes++; 
+            }
+        }
+        nLigne++;
+    }
+    fclose(Fichier);
+
+    // Initialisation de l'inventaire
+    printf("=== INIT INVENTAIRE ===\n");
+    for (int i = 0; i < MAX_CONDITIONS; i++) {
+        if (Start[i][0] != '\0') {
+            strcpy(Inventory[i], Start[i]);
+        }
+    }
+
+    afficherRules(nEtapes); 
+    printinventaire();
+
+    // Boucle d'exécution
+    bool succesGlobal = false;
+    while (!succesGlobal) {
+        succesGlobal = true;
+        bool actionRealisee = false; // Sécurité anti boucle-infinie
+
+        for (int i = 0; i < nEtapes; i++) {
+            if (!rules[i].complete) {
+                if (Execution(i)) {
+                    actionRealisee = true;
+                } else {
+                    succesGlobal = false; // Il reste des règles non complétées
+                }
             }
         }
 
-        nLigne++;
-        strcpy(ole, c);
-        fgets(c, 100, Fichier);
-
-        if (c[0] == '*')
-        {
-            fgets(c, 100, Fichier);
-        }
-        if (c == NULL || strcmp(ole, c) == 0)
-        {
-            notEmpty = false;
+        if (!succesGlobal && !actionRealisee) {
+            printf("\n! ! ! AUCUNE ACTION POSSIBLE. FIN ! ! !\n");
+            break;
         }
     }
 
-
-    // on fait l'inventaire
-
-    for (int i = 0; i < 10; i++)
-    {
-        if (Start[i][0] != '\0') // qui n'est pas vide
-        {
-            strcpy(Inventory[i], Start[i]); // est copié dans l'inventaire
-            printf("J'ajoute: [%s] a l'inv\n", Start[i]);
-        }
-        printf("\n");
-    }
-
-afficherRules(6);
-printinventaire();
-    // maintenant on regarde chaque delete et on l'enlève de l'inventaire, et chaque add et on l'ajoute à l'inventaire, pour chaque règle
-
-    while (!Succes){
-   	 Succes = true;
-   	 
-    	for (int i = 0; i < nEtapes; i++){ // i = nombre etape
-    	if (!(Execution(i))) Succes = false;
-   	 }
-   	 printinventaire();
-    }
-
-
-    fclose(Fichier);
+    return 0;
 }
