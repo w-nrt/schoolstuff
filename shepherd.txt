@@ -1,0 +1,32 @@
+start:shepherd at river,wolf at river,goat at river,cabbage at river,goat not eaten,cabbage not eaten,
+finish:shepherd passed,wolf passed,goat passed,cabbage passed,goat not eaten,cabbage not eaten,
+****
+action:shepherd goes back to river,
+preconds:shepherd passed,
+add:shepherd at river,
+delete:shepherd passed,
+****
+action:embark wolf,
+preconds:wolf at river,shepherd at river,
+add:wolf passed,shepherd passed,
+delete:wolf at river,shepherd at river,
+****
+action:embark goat,
+preconds:goat at river,shepherd at river,goat not eaten,
+add:goat passed,shepherd passed,
+delete:goat at river,shepherd at river,
+****
+action:embark cabbage,
+preconds:cabbage at river,shepherd at river,cabbage not eaten,
+add:cabbage passed,shepherd passed,
+delete:cabbage at river,shepherd at river,
+****
+action:wolf eats goat,
+preconds:wolf at river,goat at river,shephered passed,
+add:goat eaten,
+delete:goat not eaten,
+****
+action:goat eats cabbage,
+preconds:goat at river,cabbage at river,shephered passed,
+add:cabbage eaten,
+delete:cabbage not eaten,
