@@ -3,56 +3,72 @@
 #include <string.h>
 
 // constantes pr les tableaux
-       
-#define MAX_CONDITIONS 10    
-#define MAX_INVENTORY 25    
-#define MAX_RULES 25        
 
-//typedefs
+#define MAX_CONDITIONS 10
+#define MAX_INVENTORY 25
+#define MAX_RULES 25
+
+// typedefs
 typedef char string[1024];
 
-typedef struct etape {
+typedef struct etape
+{
+
     string actions[MAX_CONDITIONS];
     int nbActions;
+
     string preconds[MAX_CONDITIONS];
     int nbPreconds;
+
     string adds[MAX_CONDITIONS];
     int nbAdd;
+
     string delete[MAX_CONDITIONS];
     int nbDelete;
+
     bool complete;
 } Etape;
 
 // variables globales
 int m;
 string Start[MAX_CONDITIONS], Finish[MAX_CONDITIONS], Inventory[MAX_INVENTORY];
-Etape rules[MAX_RULES]; 
+Etape rules[MAX_RULES];
 bool peutExecuter;
-char c[100]; 
+char c[100];
 int nEtapes = -1;
+int m;
 
-void printinventaire(void) {
+void printinventaire(void)
+{
     printf("Dans l'inventaire on a: ");
-    for (int i = 0; i < MAX_INVENTORY; i++) {
-        if (Inventory[i][0] != '\0') { // si la case n'est pas vide
+    for (int i = 0; i < MAX_INVENTORY; i++)
+    {
+        if (Inventory[i][0] != '\0')
+        { // si la case n'est pas vide
             printf("[%s] ", Inventory[i]);
         }
     }
     printf("\n");
 }
 
-bool TrouveString(string t[], int n, string targ) {
-    for (int i = 0; i < n; i++) {
-        if (t[i][0] != '\0' && strcmp(t[i], targ) == 0) {
+bool TrouveString(string t[], int n, string targ)
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (t[i][0] != '\0' && strcmp(t[i], targ) == 0)
+        {
             return true;
         }
     }
     return false;
 }
 
-int searchRemoveString(string source[], string target, int n) {
-    for (int i = 0; i < n; i++) {
-        if (strcmp(source[i], target) == 0) {
+int searchRemoveString(string source[], string target, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (strcmp(source[i], target) == 0)
+        {
             source[i][0] = '\0'; // Supprimer en rendant la chaine vide
             return 0;
         }
@@ -61,33 +77,44 @@ int searchRemoveString(string source[], string target, int n) {
     return -1;
 }
 
-void afficherRules(int nbRules) {
+void afficherRules(int nbRules) //fonction pour afficher les règles, peut être supprimée après les tests
+{
     printf("\n=== AFFICHAGE DES REGLES ===\n");
-    for (int i = 0; i < nbRules; i++) {
+    for (int i = 0; i < nbRules; i++)
+    {
         printf("--- REGLE %d ---\n", i + 1);
         printf("  Actions: ");
-        for (int j = 0; j < rules[i].nbActions; j++) printf("[%s] ", rules[i].actions[j]);
+        for (int j = 0; j < rules[i].nbActions; j++)
+            printf("[%s] ", rules[i].actions[j]);
         printf("\n  Preconds: ");
-        for (int j = 0; j < rules[i].nbPreconds; j++) printf("[%s] ", rules[i].preconds[j]);
+        for (int j = 0; j < rules[i].nbPreconds; j++)
+            printf("[%s] ", rules[i].preconds[j]);
         printf("\n  Adds: ");
-        for (int j = 0; j < rules[i].nbAdd; j++) printf("[%s] ", rules[i].adds[j]);
+        for (int j = 0; j < rules[i].nbAdd; j++)
+            printf("[%s] ", rules[i].adds[j]);
         printf("\n  Deletes: ");
-        for (int j = 0; j < rules[i].nbDelete; j++) printf("[%s] ", rules[i].delete[j]);
+        for (int j = 0; j < rules[i].nbDelete; j++)
+            printf("[%s] ", rules[i].delete[j]);
         printf("\n");
     }
 }
 
-int parseLine(char source[], string cible[]) {
+int parseLine(char source[], string cible[])
+{
     int i = 0, n = 0;
 
-    while (source[i] != '\0' && source[i] != ':') i++;
-    if (source[i] == ':') i++; // Avancer après ':'
+    while (source[i] != '\0' && source[i] != ':')
+        i++;
+    if (source[i] == ':')
+        i++; // Avancer après ':'
 
     int j = i;
-    while (source[i] != '\n' && source[i] != '\0') {
-        if (source[i] == ',') {
+    while (source[i] != '\n' && source[i] != '\0')
+    {
+        if (source[i] == ',')
+        {
             memcpy(cible[n], &source[j], i - j);
-            cible[n][i - j] = '\0'; 
+            cible[n][i - j] = '\0';
             n++;
             j = i + 1;
         }
@@ -96,70 +123,100 @@ int parseLine(char source[], string cible[]) {
     return n;
 }
 
-bool Execution(int i) {
-    if (rules[i].complete) return true; // Déjà exécutée
+bool Execution(int i) //fonction qui sert a appliquer chaque rule et verifier si elle est applicable ou pas
+{
+    if (rules[i].complete)
+        return true; // Déjà exécutée
 
     peutExecuter = true;
-    for (int p = 0; p < rules[i].nbPreconds; p++) {
-        if (!TrouveString(Inventory, MAX_INVENTORY, rules[i].preconds[p])) {
+    for (int p = 0; p < rules[i].nbPreconds; p++)
+    {
+        if (!TrouveString(Inventory, MAX_INVENTORY, rules[i].preconds[p]))
+        {
             peutExecuter = false;
         }
     }
 
-    if (peutExecuter) {
-        printf("\n---- EXECUTION RULE %d ----\n", i);
-        
-        for (int j = 0; j < rules[i].nbDelete; j++) {
+    if (peutExecuter)
+    {
+        printf("\n---- EXECUTION DE LA RULE : %d ----\n", i);
+
+        for (int j = 0; j < rules[i].nbDelete; j++)
+        {
             searchRemoveString(Inventory, rules[i].delete[j], MAX_INVENTORY);
         }
-        
-        for (int k = 0; k < rules[i].nbAdd; k++) {
+
+        for (int k = 0; k < rules[i].nbAdd; k++)
+        {
             m = 0;
-            while (m < MAX_INVENTORY && Inventory[m][0] != '\0') m++; // Trouver une case vide
-            if (m < MAX_INVENTORY) {
+            while (m < MAX_INVENTORY && Inventory[m][0] != '\0')
+                m++; // Trouver une case vide
+            if (m < MAX_INVENTORY)
+            {
                 strcpy(Inventory[m], rules[i].adds[k]);
-            } else {
+            }
+            else
+            {
                 printf("Attention! Erreur! Tableau deborde \n");
             }
         }
-        
-        rules[i].complete = true; 
+
+        rules[i].complete = true;
         printinventaire();
         return true;
     }
     return false; // Impossible d'exécuter pour l'instant
 }
 
-int main(void) {
+int main(void)
+{
     FILE *Fichier = fopen("Hello.txt", "r");
-    if (!Fichier) {
+    if (!Fichier)
+    {
         printf("Erreur : Impossible d'ouvrir le fichier.\n");
         return 1;
     }
 
     int nLigne = 0;
-    
 
-    while (fgets(c, 100, Fichier) != NULL) {
-        if (c[0] == '*') continue; // Ignorer les astérisques
+    while (fgets(c, 100, Fichier) != NULL)
+    {
+        if (c[0] == '*')
+            continue; // Ignorer les astérisques
 
-        if (nEtapes == -1) {
-            if (nLigne == 0) parseLine(c, Start);
-            else if (nLigne == 1) parseLine(c, Finish);
-            else { nEtapes = 0; nLigne = 0; continue; }
+        if (nEtapes == -1)
+        {
+            if (nLigne == 0)
+                parseLine(c, Start);
+            else if (nLigne == 1)
+                parseLine(c, Finish);
+            else
+            {
+                nEtapes = 0;
+                nLigne = 0;
+                continue;
+            }
         }
-        
-        if (nEtapes != -1) {
-            if (strncmp(c, "action:", 7) == 0) {
+
+        if (nEtapes != -1)
+        {
+            if (strncmp(c, "action:", 7) == 0)
+            {
                 rules[nEtapes].nbActions = parseLine(c, rules[nEtapes].actions);
-            } else if (strncmp(c, "preconds:", 9) == 0) {
+            }
+            else if (strncmp(c, "preconds:", 9) == 0)
+            {
                 rules[nEtapes].nbPreconds = parseLine(c, rules[nEtapes].preconds);
-            } else if (strncmp(c, "add:", 4) == 0) {
+            }
+            else if (strncmp(c, "add:", 4) == 0)
+            {
                 rules[nEtapes].nbAdd = parseLine(c, rules[nEtapes].adds);
-            } else if (strncmp(c, "delete:", 7) == 0) {
+            }
+            else if (strncmp(c, "delete:", 7) == 0)
+            {
                 rules[nEtapes].nbDelete = parseLine(c, rules[nEtapes].delete);
                 rules[nEtapes].complete = false;
-                nEtapes++; 
+                nEtapes++;
             }
         }
         nLigne++;
@@ -168,34 +225,63 @@ int main(void) {
 
     // Initialisation de l'inventaire
     printf("=== INIT INVENTAIRE ===\n");
-    for (int i = 0; i < MAX_CONDITIONS; i++) {
-        if (Start[i][0] != '\0') {
+    for (int i = 0; i < MAX_CONDITIONS; i++)
+    {
+        if (Start[i][0] != '\0')
+        {
             strcpy(Inventory[i], Start[i]);
         }
     }
 
-    afficherRules(nEtapes); 
+    afficherRules(nEtapes);
     printinventaire();
 
-    // Boucle d'exécution
-    bool succesGlobal = false;
-    while (!succesGlobal) {
-        succesGlobal = true;
-        bool actionRealisee = false; // Sécurité anti boucle-infinie
+  // Boucle d'exécution
+    bool objectifAtteint = false;
 
-        for (int i = 0; i < nEtapes; i++) {
-            if (!rules[i].complete) {
-                if (Execution(i)) {
-                    actionRealisee = true;
-                } else {
-                    succesGlobal = false; // Il reste des règles non complétées
+    while (!objectifAtteint)
+    {
+        bool actionRealisee = false; // sert a eviter que le programme cherche pour toujours
+        bool chercheObj = true;
+
+        for (int i = 0; i < nEtapes; i++)
+        {
+            if (!rules[i].complete)
+            {
+                if (Execution(i))
+                {
+                    actionRealisee = true; 
+                    
+   
+                    objectifAtteint = true; // true par défaut, set a false si non vrai
+                    m = 0;
+                    
+                    while (m < MAX_CONDITIONS && Finish[m][0] != '\0' && chercheObj)
+                    {
+                        // Si on ne trouve pas une des conditions finales dans l'inventaire
+                        if (!TrouveString(Inventory, MAX_INVENTORY, Finish[m]))
+                        {
+                            objectifAtteint = false; 
+                            chercheObj = false; // On arrête la boucle de suite
+                        }
+                        m++;
+                    }
+
+                    // Si on a toutes les conditions de Finish, on arrête tout immédiatement
+                    if (objectifAtteint)
+                    {
+                        printf("\n-- EXECUTION COMPLETE! SUCCES!\n");
+                        return 0; // on sort directement du programme, pas besoin de faire d'autre chose
+                    }
                 }
             }
         }
 
-        if (!succesGlobal && !actionRealisee) {
-            printf("\n! ! ! AUCUNE ACTION POSSIBLE. FIN ! ! !\n");
-            break;
+        // càd qu'on est coincé, on ne peut appliquer plus de règles. dans ce cas on evite une boucle infinie en sortant
+        if (!actionRealisee)
+        {
+            printf("\n! ! ! BLOCAGE : AUCUNE ACTION POSSIBLE. ECHEC ! ! !\n");
+            objectifAtteint = true; // sort de la boucle
         }
     }
 
